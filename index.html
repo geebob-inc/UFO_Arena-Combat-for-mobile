@@ -17,6 +17,7 @@ canvas { display:block; margin:auto; background:#141432; }
     justify-content:space-between;
 }
 
+/* LEFT JOYSTICK - MOVEMENT */
 #joystick {
     width:120px;
     height:120px;
@@ -25,7 +26,6 @@ canvas { display:block; margin:auto; background:#141432; }
     border-radius:50%;
     position:relative;
 }
-
 #stick {
     width:50px;
     height:50px;
@@ -36,8 +36,30 @@ canvas { display:block; margin:auto; background:#141432; }
     top:35px;
 }
 
-#boostBtn {
+/* RIGHT JOYSTICK - AIM */
+#aimJoystick {
+    width:120px;
+    height:120px;
     margin-right:20px;
+    background:rgba(255,255,255,0.1);
+    border-radius:50%;
+    position:relative;
+}
+#aimStick {
+    width:50px;
+    height:50px;
+    background:orange;
+    border-radius:50%;
+    position:absolute;
+    left:35px;
+    top:35px;
+}
+
+/* BOOST BUTTON */
+#boostBtn {
+    position:absolute;
+    right:160px;
+    bottom:40px;
     padding:20px;
     font-size:18px;
 }
@@ -50,7 +72,6 @@ canvas { display:block; margin:auto; background:#141432; }
     padding:10px 15px;
     font-size:16px;
 }
-
 #restartBtn {
     position:absolute;
     top:50%;
@@ -61,22 +82,25 @@ canvas { display:block; margin:auto; background:#141432; }
     display:none;
 }
 </style>
-    <a href="https://geebob-glitch.github.io/webs/" target="_blank">
-<br>Check out my websites here:
-</a>
 </head>
 
 <body>
 
+<a href="https://geebob-glitch.github.io/webs/" target="_blank">
+<br>Check out my websites here:
+</a>
+
 <canvas id="gameCanvas" width="800" height="600"></canvas>
 
-<button id="pauseBtn" color:green;>PAUSE</button>
-<button id="restartBtn" color:green; >RESTART</button>
+<button id="pauseBtn">PAUSE</button>
+<button id="restartBtn">RESTART</button>
 
 <div id="controls">
   <div id="joystick"><div id="stick"></div></div>
-  <button id="boostBtn" color:green; >BOOST</button>
+  <div id="aimJoystick"><div id="aimStick"></div></div>
 </div>
+
+<button id="boostBtn">BOOST</button>
 
 <script>
 
@@ -132,62 +156,52 @@ function initGame(){
 }
 initGame();
 
-/* --------- JOYSTICK --------- */
+/* --------- LEFT JOYSTICK - MOVEMENT --------- */
 let joyX=0, joyY=0;
-
 const joystick=document.getElementById("joystick");
 const stick=document.getElementById("stick");
 
-joystick.addEventListener("touchmove",e=>{
+joystick.addEventListener("touchmove", e=>{
     const rect=joystick.getBoundingClientRect();
     const t=e.touches[0];
-
     let x=t.clientX-rect.left-60;
     let y=t.clientY-rect.top-60;
-
-    let dist=Math.hypot(x,y);
-    let max=40;
-
-    if(dist>max){
-        x=x/dist*max;
-        y=y/dist*max;
-    }
-
-    joyX=x/max;
-    joyY=y/max;
-
+    let dist=Math.hypot(x,y), max=40;
+    if(dist>max){ x=x/dist*max; y=y/dist*max; }
+    joyX=x/max; joyY=y/max;
     stick.style.left=(x+35)+"px";
     stick.style.top=(y+35)+"px";
 });
-
-joystick.addEventListener("touchend",()=>{
+joystick.addEventListener("touchend", ()=>{
     joyX=0; joyY=0;
-    stick.style.left="35px";
-    stick.style.top="35px";
+    stick.style.left="35px"; stick.style.top="35px";
+});
+
+/* --------- RIGHT JOYSTICK - AIM --------- */
+let aimX=0, aimY=0;
+const aimJoystick=document.getElementById("aimJoystick");
+const aimStick=document.getElementById("aimStick");
+
+aimJoystick.addEventListener("touchmove", e=>{
+    const rect=aimJoystick.getBoundingClientRect();
+    const t=e.touches[0];
+    let x=t.clientX-rect.left-60;
+    let y=t.clientY-rect.top-60;
+    let dist=Math.hypot(x,y), max=40;
+    if(dist>max){ x=x/dist*max; y=y/dist*max; }
+    aimX=x/max; aimY=y/max;
+    aimStick.style.left=(x+35)+"px";
+    aimStick.style.top=(y+35)+"px";
+});
+aimJoystick.addEventListener("touchend", ()=>{
+    aimX=0; aimY=0;
+    aimStick.style.left="35px"; aimStick.style.top="35px";
 });
 
 /* --------- BOOST --------- */
 let boosting=false;
 document.getElementById("boostBtn").ontouchstart=()=>boosting=true;
 document.getElementById("boostBtn").ontouchend=()=>boosting=false;
-
-/* --------- SHOOTING --------- */
-let touchX=0, touchY=0, shooting=false;
-
-canvas.addEventListener("touchstart",e=>{
-    const t=e.touches[0];
-    touchX=t.clientX;
-    touchY=t.clientY;
-    shooting=true;
-});
-
-canvas.addEventListener("touchmove",e=>{
-    const t=e.touches[0];
-    touchX=t.clientX;
-    touchY=t.clientY;
-});
-
-canvas.addEventListener("touchend",()=>shooting=false);
 
 /* --------- BUTTONS --------- */
 const pauseBtn=document.getElementById("pauseBtn");
@@ -198,7 +212,6 @@ pauseBtn.onclick=()=>{
     paused=!paused;
     pauseBtn.innerText=paused?"RESUME":"PAUSE";
 };
-
 restartBtn.onclick=()=>{
     initGame();
     paused=false;
@@ -206,134 +219,101 @@ restartBtn.onclick=()=>{
     restartBtn.style.display="none";
 };
 
-/* --------- SPAWN --------- */
+/* --------- SPAWN ENEMIES --------- */
 function spawnEnemy(){
     let side=["top","bottom","left","right"][Math.random()*4|0];
     let x,y;
-
     if(side=="top"){ x=Math.random()*800; y=-30; }
     else if(side=="bottom"){ x=Math.random()*800; y=630; }
     else if(side=="left"){ x=-30; y=Math.random()*600; }
     else { x=830; y=Math.random()*600; }
-
     enemies.push(new Enemy(x,y,1.5+difficulty*0.2));
 }
 
 /* --------- GAME LOOP --------- */
 function gameLoop(){
-requestAnimationFrame(gameLoop);
+    requestAnimationFrame(gameLoop);
 
-if(!game_over && !paused){
+    if(!game_over && !paused){
 
-    let dx=joyX*player.speed;
-    let dy=joyY*player.speed;
+        /* MOVE PLAYER */
+        let dx=joyX*player.speed, dy=joyY*player.speed;
+        if(boosting){ dx*=1.5; dy*=1.5; }
+        player.x=Math.max(10, Math.min(player.x+dx, 790));
+        player.y=Math.max(10, Math.min(player.y+dy, 590));
 
-    if(boosting){ dx*=1.5; dy*=1.5; }
-
-    player.x=Math.max(10,Math.min(player.x+dx,790));
-    player.y=Math.max(10,Math.min(player.y+dy,590));
-
-    let now=Date.now();
-    if(shooting && now-player.last_shot>50){
-        let dxm=touchX-player.x;
-        let dym=touchY-player.y;
-        let d=Math.hypot(dxm,dym)||1;
-
-        player.bullets.push(new Bullet(
-            player.x,player.y,
-            dxm/d*8,dym/d*8
-        ));
-
-        player.last_shot=now;
-    }
-
-  /* MOVE BULLETS + COLLISION */
-for (let bi = player.bullets.length - 1; bi >= 0; bi--) {
-    let b = player.bullets[bi];
-    b.x += b.vx;
-    b.y += b.vy;
-
-    // remove bullet if off screen
-    if (b.x < 0 || b.x > 800 || b.y < 0 || b.y > 600) {
-        player.bullets.splice(bi, 1);
-        continue;
-    }
-
-    // check collision with enemies
-    for (let ei = enemies.length - 1; ei >= 0; ei--) {
-        let e = enemies[ei];
-        let dist = Math.hypot(b.x - e.x, b.y - e.y);
-
-        if (dist < b.radius + e.radius) {
-            enemies.splice(ei, 1);   // remove enemy
-            player.bullets.splice(bi, 1); // remove bullet
-            score += 10;
-            break;
+        /* AUTO SHOOT USING AIM */
+        let now=Date.now();
+        if((aimX!==0 || aimY!==0) && now-player.last_shot>120){
+            let d=Math.hypot(aimX,aimY)||1;
+            player.bullets.push(new Bullet(
+                player.x, player.y,
+                (aimX/d)*8, (aimY/d)*8
+            ));
+            player.last_shot=now;
         }
+
+        /* MOVE BULLETS + COLLISION */
+        for(let bi=player.bullets.length-1; bi>=0; bi--){
+            let b=player.bullets[bi];
+            b.x+=b.vx; b.y+=b.vy;
+            if(b.x<0 || b.x>800 || b.y<0 || b.y>600){ player.bullets.splice(bi,1); continue; }
+            for(let ei=enemies.length-1; ei>=0; ei--){
+                let e=enemies[ei];
+                if(Math.hypot(b.x-e.x, b.y-e.y)<b.radius+e.radius){
+                    enemies.splice(ei,1);
+                    player.bullets.splice(bi,1);
+                    score+=10;
+                    break;
+                }
+            }
+        }
+
+        /* MOVE ENEMIES */
+        for(let ei=enemies.length-1; ei>=0; ei--){
+            let e=enemies[ei];
+            e.moveToward(player);
+            if(Math.hypot(player.x-e.x, player.y-e.y)<40){
+                game_over=true;
+                restartBtn.style.display="block";
+            }
+        }
+
+        /* SPAWN ENEMIES */
+        enemy_spawn_counter++;
+        if(enemy_spawn_counter>80){ enemy_spawn_counter=0; spawnEnemy(); }
+        difficulty=(Date.now()-start_time)/15000;
     }
-}
 
-/* MOVE ENEMIES */
-for (let ei = enemies.length - 1; ei >= 0; ei--) {
-    let e = enemies[ei];
-    e.moveToward(player);
+    /* --------- DRAW --------- */
+    ctx.fillStyle="#141432";
+    ctx.fillRect(0,0,800,600);
 
-    if (Math.hypot(player.x - e.x, player.y - e.y) < 40) {
-        game_over = true;
-        restartBtn.style.display = "block";
-    }
-}
+    ctx.fillStyle="cyan";
+    ctx.beginPath(); ctx.arc(player.x,player.y,20,0,Math.PI*2); ctx.fill();
 
-    enemy_spawn_counter++;
-    if(enemy_spawn_counter>80){
-        enemy_spawn_counter=0;
-        spawnEnemy();
-    }
-
-    difficulty=(Date.now()-start_time)/15000;
-}
-
-/* DRAW */
-ctx.fillStyle="#141432";
-ctx.fillRect(0,0,800,600);
-
-ctx.fillStyle="cyan";
-ctx.beginPath();
-ctx.arc(player.x,player.y,20,0,Math.PI*2);
-ctx.fill();
-
-ctx.fillStyle="red";
-enemies.forEach(e=>{
-    ctx.beginPath();
-    ctx.arc(e.x,e.y,12,0,Math.PI*2);
-    ctx.fill();
-});
-
-ctx.fillStyle="lime";
-player.bullets.forEach(b=>{
-    ctx.beginPath();
-    ctx.arc(b.x,b.y,4,0,Math.PI*2);
-    ctx.fill();
-});
-
-ctx.fillStyle="white";
-ctx.fillText("Score: "+score,10,20);
-
-if(paused && !game_over){
-    ctx.font="30px sans-serif";
-    ctx.fillText("PAUSED",320,300);
-}
-
-if(game_over){
     ctx.fillStyle="red";
-    ctx.font="30px sans-serif";
-    ctx.fillText("gameover",300,260);
-}
+    enemies.forEach(e=>{ ctx.beginPath(); ctx.arc(e.x,e.y,12,0,Math.PI*2); ctx.fill(); });
 
+    ctx.fillStyle="lime";
+    player.bullets.forEach(b=>{ ctx.beginPath(); ctx.arc(b.x,b.y,4,0,Math.PI*2); ctx.fill(); });
+
+    ctx.fillStyle="white"; ctx.font="20px sans-serif";
+    ctx.fillText("Score: "+score,10,20);
+
+    if(paused && !game_over){
+        ctx.font="30px sans-serif";
+        ctx.fillText("PAUSED",320,300);
+    }
+
+    if(game_over){
+        ctx.fillStyle="red";
+        ctx.font="30px sans-serif";
+        ctx.fillText("GAME OVER",300,260);
+    }
 }
 
 gameLoop();
-
 </script>
 </body>
 </html>
