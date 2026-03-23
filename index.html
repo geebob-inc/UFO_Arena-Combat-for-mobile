@@ -247,19 +247,42 @@ if(!game_over && !paused){
         player.last_shot=now;
     }
 
-    player.bullets.forEach(b=>{
-        b.x+=b.vx;
-        b.y+=b.vy;
-    });
+  /* MOVE BULLETS + COLLISION */
+for (let bi = player.bullets.length - 1; bi >= 0; bi--) {
+    let b = player.bullets[bi];
+    b.x += b.vx;
+    b.y += b.vy;
 
-    enemies.forEach(e=>{
-        e.moveToward(player);
+    // remove bullet if off screen
+    if (b.x < 0 || b.x > 800 || b.y < 0 || b.y > 600) {
+        player.bullets.splice(bi, 1);
+        continue;
+    }
 
-        if(Math.hypot(player.x-e.x,player.y-e.y)<40){
-            game_over=true;
-            restartBtn.style.display="block";
+    // check collision with enemies
+    for (let ei = enemies.length - 1; ei >= 0; ei--) {
+        let e = enemies[ei];
+        let dist = Math.hypot(b.x - e.x, b.y - e.y);
+
+        if (dist < b.radius + e.radius) {
+            enemies.splice(ei, 1);   // remove enemy
+            player.bullets.splice(bi, 1); // remove bullet
+            score += 10;
+            break;
         }
-    });
+    }
+}
+
+/* MOVE ENEMIES */
+for (let ei = enemies.length - 1; ei >= 0; ei--) {
+    let e = enemies[ei];
+    e.moveToward(player);
+
+    if (Math.hypot(player.x - e.x, player.y - e.y) < 40) {
+        game_over = true;
+        restartBtn.style.display = "block";
+    }
+}
 
     enemy_spawn_counter++;
     if(enemy_spawn_counter>80){
